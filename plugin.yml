@@ -1,0 +1,33 @@
+name: NPC
+author: onebone
+api:
+- 1.13.0
+- 2.0.0
+main: onebone\npc\Main
+version: "1.3"
+
+
+permissions:
+ npc.*:
+  description: Includes all permissions of NPC
+  children:
+   npc.command.*:
+    description: Allows all commands of NPC
+    children:
+     npc.command.npc:
+      description: Allows player to use /npc
+      children:
+       npc.command.npc.create:
+        description: Allows player to use /npc create
+       npc.command.npc.remove:
+        description: Allows player to use /npc remove
+       npc.command.npc.list:
+        description: Allows player to use /npc list
+       npc.command.npc.message:
+        description: Allows player to use /npc message
+
+commands:
+ npc:
+  description: NPC master command
+  usage: /npc <create|remove|list|message>
+  permission: npc.command.npc
