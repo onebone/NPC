@@ -173,7 +173,7 @@ class NPC extends Location{
 				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinName, $this->skin
 			]
 		];
-		$target->dataPacket($pk);
+		$player->dataPacket($pk);
 	}
 
 	public function remove(){
