@@ -30,20 +30,21 @@ use pocketmine\network\protocol\MovePlayerPacket;
 use pocketmine\network\protocol\RemovePlayerPacket;
 use pocketmine\network\protocol\RemoveEntityPacket;
 use pocketmine\utils\UUID;
+use pocketmine\utils\TextFormat;
 use pocketmine\item\Item;
 use pocketmine\Player;
 use pocketmine\math\Vector2;
 
-class NPC{
+class NPC extends Location{
 	private $eid;
-	public $pos;
 	private $skin, $skinName, $name;
 	private $item, $message;
 
 	private $uuid;
 
 	public function __construct(Location $loc, $name, $skin, $skinName, Item $item, $message = ""){
-		$this->pos = $loc;
+		parent::__construct($loc->x, $loc->y, $loc->z, $loc->yaw, $loc->pitch, $loc->level);
+
 		$this->eid = Entity::$entityCount++;
 		$this->skin = $skin;
 		$this->skinName = $skinName;
@@ -64,30 +65,6 @@ class NPC{
 
 	public function getMessage(){
 		return $this->message;
-	}
-
-	public function setX($x){
-		$this->pos->x = $x;
-	}
-
-	public function setY($y){
-		$this->pos->y = $y;
-	}
-
-	public function setZ($z){
-		$this->pos->z = $z;
-	}
-
-	public function setYaw($yaw){
-		$this->pos->yaw = $yaw;
-	}
-
-	public function setPitch($pitch){
-		$this->pos->pitch = $pitch;
-	}
-
-	public function getLevel(){
-		return $this->pos->level;
 	}
 
 	public function getSkin(){
@@ -112,27 +89,27 @@ class NPC{
 	public function seePlayer(Player $target){
 		$pk = new MovePlayerPacket();
 		$pk->eid = $this->eid;
-		if($this->pos->yaw === -1 and $target !== null){
-			$xdiff = $target->x - $this->pos->x;
-			$zdiff = $target->z - $this->pos->z;
+		if($this->yaw === -1 and $target !== null){
+			$xdiff = $target->x - $this->x;
+			$zdiff = $target->z - $this->z;
 			$angle = atan2($zdiff, $xdiff);
 			$pk->yaw = (($angle * 180) / M_PI) - 90;
 		}else{
-			$pk->yaw = $this->pos->yaw;
+			$pk->yaw = $this->yaw;
 		}
-		if($this->pos->pitch === -1 and $target !== null){
-			$ydiff = $target->y - $this->pos->y;
+		if($this->pitch === -1 and $target !== null){
+			$ydiff = $target->y - $this->y;
 
-			$vec = new Vector2($this->pos->x, $this->pos->z);
+			$vec = new Vector2($this->x, $this->z);
 			$dist = $vec->distance($target->x, $target->z);
 			$angle = atan2($dist, $ydiff);
 			$pk->pitch = (($angle * 180) / M_PI) - 90;
 		}else{
 			$pk->pitch = $this->pitch;
 		}
-		$pk->x = $this->pos->x;
-		$pk->y = $this->pos->y + 1.62;
-		$pk->z = $this->pos->z;
+		$pk->x = $this->x;
+		$pk->y = $this->y + 1.62;
+		$pk->z = $this->z;
 		$pk->bodyYaw = $pk->yaw;
 		$pk->onGruond = 0;
 
@@ -144,21 +121,21 @@ class NPC{
 		$pk->uuid = $this->uuid;
 		$pk->username = $this->name;
 		$pk->eid = $this->eid;
-		$pk->x = $this->pos->x;
-		$pk->y = $this->pos->y;
-		$pk->z = $this->pos->z;
-		if($this->pos->yaw === -1 and $target !== null){
-			$xdiff = $target->x - $this->pos->x;
-			$zdiff = $target->z - $this->pos->z;
+		$pk->x = $this->x;
+		$pk->y = $this->y;
+		$pk->z = $this->z;
+		if($this->yaw === -1 and $target !== null){
+			$xdiff = $target->x - $this->x;
+			$zdiff = $target->z - $this->z;
 			$angle = atan2($zdiff, $xdiff);
 			$pk->yaw = (($angle * 180) / M_PI) - 90;
 		}else{
-			$pk->yaw = $this->pos->yaw;
+			$pk->yaw = $this->yaw;
 		}
-		if($this->pos->pitch === -1 and $target !== null){
+		if($this->pitch === -1 and $target !== null){
 
 		}else{
-			$pk->pitch = $this->pos->pitch;
+			$pk->pitch = $this->pitch;
 		}
 		$pk->item = $this->item;
 		$pk->metadata =
@@ -172,11 +149,13 @@ class NPC{
 
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_ADD;
+
 		$pk->entries = [
 			[
-				$this->uuid, $this->eid, "NPC: ".$this->name, $this->skinName, $this->skin
+				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinName, $this->skin
 			]
 		];
+
 		$target->dataPacket($pk);
 	}
 
@@ -188,29 +167,25 @@ class NPC{
 		$player->dataPacket($pk);
 
 		$pk = new PlayerListPacket();
-		$pk->type = PlayerListPacket::TYPE_ADD;
+		$pk->type = PlayerListPacket::TYPE_REMOVE;
 		$pk->entries = [
 			[
-				$this->uuid, $this->eid, "NPC: ".$this->name, $this->skinName, $this->skin
+				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinName, $this->skin
 			]
 		];
 		$target->dataPacket($pk);
 	}
 
 	public function remove(){
-		$pk = new RemovePlayerPacket();
-		$pk->eid = $this->eid;
-		$pk->clientId = $this->uuid;
-		$players = $this->pos->level->getPlayers();
-		foreach($players as $player){
-			$player->dataPacket($pk);
+		foreach($this->level->getPlayers() as $player){
+			$this->removeFrom($player);
 		}
 	}
 
 	public function getSaveData(){
 		return [
-			$this->pos->x, $this->pos->y, $this->pos->z, $this->pos->level->getFolderName(),
-			$this->pos->yaw, $this->pos->pitch,
+			$this->x, $this->y, $this->z, $this->level->getFolderName(),
+			$this->yaw, $this->pitch,
 			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinName, $this->message
 		];
 	}

@@ -181,7 +181,7 @@ class Main extends PluginBase implements Listener{
 
 					if($current === $page){
 						$output .= "#".$npc->getId()
-						." (".round($npc->pos->x, 2).":".round($npc->pos->y, 2).":".round($npc->pos->z, 2).":".$npc->pos->getLevel()->getName()."): "
+						." (".round($npc->x, 2).":".round($npc->y, 2).":".round($npc->z, 2).":".$npc->getLevel()->getName()."): "
 						.$npc->getName()."\n";
 					}elseif($current > $page) break;
 				}
