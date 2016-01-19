@@ -27,6 +27,7 @@ use pocketmine\utils\TextFormat;
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\player\PlayerMoveEvent;
+use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\network\protocol\InteractPacket;
 use pocketmine\Player;
@@ -87,18 +88,25 @@ class Main extends PluginBase implements Listener{
 	public function onMoveEvent(PlayerMoveEvent $event){
 		$player = $event->getPlayer();
 
-		if($event->getFrom()->getLevel()->getFolderName() !== ($toLevel = $event->getTo()->getLevel()->getFolderName())){
-			foreach($this->npc as $npc){
-				if($npc->getLevel()->getFolderName() === $toLevel){
-					$npc->spawnTo($player);
-				}else{
-					$npc->removeFrom($player);
-				}
-			}
-		}
 		foreach($this->npc as $npc){
 			if($npc->getLevel()->getFolderName() === $event->getPlayer()->getLevel()->getFolderName()){
 				$npc->seePlayer($player);
+			}
+		}
+	}
+
+	public function onEntityTeleport(EntityTeleportEvent $event){
+		$player = $event->getEntity();
+
+		if($player instanceof Player){
+			if($event->getFrom()->getLevel()->getFolderName() !== ($toLevel = $event->getTo()->getLevel()->getFolderName())){
+				foreach($this->npc as $npc){
+					if($npc->getLevel()->getFolderName() === $toLevel){
+						$npc->spawnTo($player);
+					}else{
+						$npc->removeFrom($player);
+					}
+				}
 			}
 		}
 	}
