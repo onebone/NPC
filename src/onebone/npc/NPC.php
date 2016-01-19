@@ -25,6 +25,7 @@ use pocketmine\level\Location;
 use pocketmine\network\Network;
 use pocketmine\Server;
 use pocketmine\network\protocol\AddPlayerPacket;
+use pocketmine\network\protocol\PlayerListPacket;
 use pocketmine\network\protocol\MovePlayerPacket;
 use pocketmine\network\protocol\RemovePlayerPacket;
 use pocketmine\network\protocol\RemoveEntityPacket;
@@ -160,13 +161,21 @@ class NPC{
 			$pk->pitch = $this->pos->pitch;
 		}
 		$pk->item = $this->item;
-		$pk->skin = $this->skin;
 		$pk->metadata =
 		[
 			Entity::DATA_SHOW_NAMETAG => [
 						Entity::DATA_TYPE_BYTE,
 						1
 				],
+		];
+		$target->dataPacket($pk);
+
+		$pk = new PlayerListPacket();
+		$pk->type = PlayerListPacket::TYPE_ADD;
+		$pk->entries = [
+			[
+				$this->uuid, $this->eid, "NPC: ".$this->name, $this->skinName, $this->skin
+			]
 		];
 		$target->dataPacket($pk);
 	}
@@ -176,7 +185,16 @@ class NPC{
 		$pk->clientId = $this->uuid;
 		$pk->eid = $this->eid;
 
-		$player->directDataPacket($pk);
+		$player->dataPacket($pk);
+
+		$pk = new PlayerListPacket();
+		$pk->type = PlayerListPacket::TYPE_ADD;
+		$pk->entries = [
+			[
+				$this->uuid, $this->eid, "NPC: ".$this->name, $this->skinName, $this->skin
+			]
+		];
+		$target->dataPacket($pk);
 	}
 
 	public function remove(){
@@ -185,7 +203,7 @@ class NPC{
 		$pk->clientId = $this->uuid;
 		$players = $this->pos->level->getPlayers();
 		foreach($players as $player){
-			$player->directDataPacket($pk);
+			$player->dataPacket($pk);
 		}
 	}
 
