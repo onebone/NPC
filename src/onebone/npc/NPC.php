@@ -144,6 +144,14 @@ class NPC extends Location{
 						Entity::DATA_TYPE_BYTE,
 						1
 				],
+			Entity::DATA_LEAD_HOLDER => [
+						Entity::DATA_TYPE_LONG,
+						-1
+				],
+			Entity::DATA_LEAD => [
+						Entity::DATA_TYPE_BYTE,
+						0
+				],
 		];
 		$target->dataPacket($pk);
 
@@ -160,7 +168,7 @@ class NPC extends Location{
 	}
 
 	public function removeFrom(Player $player){
-		$pk = new RemovePlayerPacket();
+		$pk = new RemoveEntityPacket();
 		$pk->clientId = $this->uuid;
 		$pk->eid = $this->eid;
 
