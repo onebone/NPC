@@ -37,17 +37,17 @@ use pocketmine\math\Vector2;
 
 class NPC extends Location{
 	private $eid;
-	private $skin, $skinName, $name;
+	private $skin, $skinId, $name;
 	private $item, $message;
 
 	private $uuid;
 
-	public function __construct(Location $loc, $name, $skin, $skinName, Item $item, $message = ""){
+	public function __construct(Location $loc, $name, $skin, $skinId, Item $item, $message = ""){
 		parent::__construct($loc->x, $loc->y, $loc->z, $loc->yaw, $loc->pitch, $loc->level);
 
 		$this->eid = Entity::$entityCount++;
 		$this->skin = $skin;
-		$this->skinName = $skinName;
+		$this->skinId = $skinId;
 		$this->name = $name;
 		$this->item = $item;
 		$this->message = $message;
@@ -160,7 +160,7 @@ class NPC extends Location{
 
 		$pk->entries = [
 			[
-				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinName, $this->skin
+				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinId, $this->skin
 			]
 		];
 
@@ -178,7 +178,7 @@ class NPC extends Location{
 		$pk->type = PlayerListPacket::TYPE_REMOVE;
 		$pk->entries = [
 			[
-				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinName, $this->skin
+				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinId, $this->skin
 			]
 		];
 		$player->dataPacket($pk);
@@ -194,7 +194,7 @@ class NPC extends Location{
 		return [
 			$this->x, $this->y, $this->z, $this->level->getFolderName(),
 			$this->yaw, $this->pitch,
-			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinName, $this->message
+			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinId, $this->message
 		];
 	}
 
