@@ -237,7 +237,7 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 						return true;
 					}
-					
+
 					$this->cmdQueue[$sender->getName()] = trim(implode(" ", $params));
 					$sender->sendMessage("Touch NPC you want to set command.");
 					return true;
