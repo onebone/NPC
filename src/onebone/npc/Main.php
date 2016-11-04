@@ -33,7 +33,9 @@ use pocketmine\network\protocol\InteractPacket;
 use pocketmine\Player;
 
 class Main extends PluginBase implements Listener{
-	private $npc, $msgQueue;
+	/** @var NPC[] */
+	private $npc = [];
+	private $msgQueue;
 
 	public function onEnable(){
 		if(!file_exists($this->getDataFolder())){
@@ -117,102 +119,107 @@ class Main extends PluginBase implements Listener{
 			switch(strtolower(array_shift($params))){
 				case "create":
 				case "c":
-				if(!$sender->hasPermission("npc.command.npc.create")){
-					$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
-					return true;
-				}
-
-				$name = implode(" ", $params);
-				if(trim($name) === ""){
-					$sender->sendMessage(TextFormat::RED."Usage: /npc create <name>");
-					return true;
-				}
-				$location = new Location($sender->getX(), $sender->getY(), $sender->getZ(), -1, -1, $sender->getLevel());
-
-				$npc = new NPC(clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
-				$this->npc[$npc->getId()] = $npc;
-				foreach($sender->getLevel()->getPlayers() as $player){
-					$npc->spawnTo($player);
-				}
-
-				if($this->getConfig()->get("save-on-change")){
-					$this->save();
-				}
-				return true;
-				case "remove":
-				case "r":
-				if(!$sender->hasPermission("npc.command.npc.remove")){
-					$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
-					return true;
-				}
-
-				$id = array_shift($params);
-				if(!is_numeric($id)){
-					$sender->sendMessage(TextFormat::RED."Usage: /npc remove <id>");
-					return true;
-				}
-
-				foreach($this->npc as $key => $npc){
-					if($id == $npc->getId()){
-						$npc->remove();
-						unset($this->npc[$key]);
-						$sender->sendMessage("Removed NPC ".TextFormat::AQUA.$npc->getName());
-						if($this->getConfig()->get("save-on-change")){
-							$this->save();
-						}
+					if(!$sender instanceof Player){
+						$sender->sendMessage(TextFormat::RED . "Please run this command in-game.");
 						return true;
 					}
-				}
-				$sender->sendMessage("Could not find NPC ".TextFormat::RED.$id);
+
+					if(!$sender->hasPermission("npc.command.npc.create")){
+						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						return true;
+					}
+
+					$name = implode(" ", $params);
+					if(trim($name) === ""){
+						$sender->sendMessage(TextFormat::RED."Usage: /npc create <name>");
+						return true;
+					}
+					$location = new Location($sender->getX(), $sender->getY(), $sender->getZ(), -1, -1, $sender->getLevel());
+
+					$npc = new NPC(clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
+					$this->npc[$npc->getId()] = $npc;
+					foreach($sender->getLevel()->getPlayers() as $player){
+						$npc->spawnTo($player);
+					}
+
+					if($this->getConfig()->get("save-on-change")){
+						$this->save();
+					}
+					return true;
+					case "remove":
+					case "r":
+					if(!$sender->hasPermission("npc.command.npc.remove")){
+						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						return true;
+					}
+
+					$id = array_shift($params);
+					if(!is_numeric($id)){
+						$sender->sendMessage(TextFormat::RED."Usage: /npc remove <id>");
+						return true;
+					}
+
+					foreach($this->npc as $key => $npc){
+						if($id == $npc->getId()){
+							$npc->remove();
+							unset($this->npc[$key]);
+							$sender->sendMessage("Removed NPC ".TextFormat::AQUA.$npc->getName());
+							if($this->getConfig()->get("save-on-change")){
+								$this->save();
+							}
+							return true;
+						}
+					}
+					$sender->sendMessage("Could not find NPC ".TextFormat::RED.$id);
 				return true;
 				case "list":
 				case "ls":
 				case "l":
-				if(!$sender->hasPermission("npc.command.npc.list")){
-					$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+					if(!$sender->hasPermission("npc.command.npc.list")){
+						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						return true;
+					}
+
+					$page = array_shift($params);
+					if(!is_numeric($page)){
+						$page = 1;
+					}
+
+					$max = ceil(count($this->npc)/5);
+					$page = (int)$page;
+					$page = max(1, min($page, $max));
+
+					$output = "Showing NPC list (page $page/$max): \n";
+					$n = 0;
+					foreach($this->npc as $id => $npc){
+						$current = (int)ceil(++$n / 5);
+
+						if($current === $page){
+							$output .= "#".$npc->getId()
+							." (".round($npc->x, 2).":".round($npc->y, 2).":".round($npc->z, 2).":".$npc->getLevel()->getName()."): "
+							.$npc->getName()."\n";
+						}elseif($current > $page) break;
+					}
+					$output = substr($output, 0, -1);
+					$sender->sendMessage($output);
 					return true;
-				}
-
-				$page = array_shift($params);
-				if(!is_numeric($page)){
-					$page = 1;
-				}
-
-				$max = ceil(count($this->npc)/5);
-				$page = (int)$page;
-				$page = max(1, min($page, $max));
-
-				$output = "Showing NPC list (page $page/$max): \n";
-				$n = 0;
-				foreach($this->npc as $id => $npc){
-					$current = (int)ceil(++$n / 5);
-
-					if($current === $page){
-						$output .= "#".$npc->getId()
-						." (".round($npc->x, 2).":".round($npc->y, 2).":".round($npc->z, 2).":".$npc->getLevel()->getName()."): "
-						.$npc->getName()."\n";
-					}elseif($current > $page) break;
-				}
-				$output = substr($output, 0, -1);
-				$sender->sendMessage($output);
-				return true;
 				case "message":
 				case "msg":
 				case "m":
-				if(!$sender->hasPermission("npc.command.npc.message")){
-					$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+					if(!$sender->hasPermission("npc.command.npc.message")){
+						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						return true;
+					}
+
+					$message = trim(implode(" ", $params));
+
+					$this->msgQueue[$sender->getName()] = $message;
+
+					$sender->sendMessage("Touch NPC you want to set message.");
+					if($this->getConfig()->get("save-on-change")){
+						$this->save();
+					}
 					return true;
-				}
-
-				$message = trim(implode(" ", $params));
-
-				$this->msgQueue[$sender->getName()] = $message;
-
-				$sender->sendMessage("Touch NPC you want to set message.");
-				if($this->getConfig()->get("save-on-change")){
-					$this->save();
-				}
-				return true;
 			}
 		}
 		return false;
