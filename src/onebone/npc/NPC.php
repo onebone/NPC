@@ -19,15 +19,12 @@
 
 namespace onebone\npc;
 
-use pocketmine\entity\Human;
 use pocketmine\entity\Entity;
 use pocketmine\level\Location;
-use pocketmine\network\Network;
 use pocketmine\Server;
 use pocketmine\network\protocol\AddPlayerPacket;
 use pocketmine\network\protocol\PlayerListPacket;
 use pocketmine\network\protocol\MovePlayerPacket;
-use pocketmine\network\protocol\RemovePlayerPacket;
 use pocketmine\network\protocol\RemoveEntityPacket;
 use pocketmine\utils\UUID;
 use pocketmine\utils\TextFormat;
@@ -140,18 +137,16 @@ class NPC extends Location{
 		$pk->item = $this->item;
 		$pk->metadata =
 		[
-			Entity::DATA_SHOW_NAMETAG => [
-						Entity::DATA_TYPE_BYTE,
-						1
-				],
-			Entity::DATA_LEAD_HOLDER => [
-						Entity::DATA_TYPE_LONG,
-						-1
-				],
-			Entity::DATA_LEAD => [
-						Entity::DATA_TYPE_BYTE,
-						0
-				],
+			Entity::DATA_FLAGS => [
+				Entity::DATA_TYPE_LONG, 1 << Entity::DATA_FLAG_ALWAYS_SHOW_NAMETAG
+										^ 1 << Entity::DATA_FLAG_CAN_SHOW_NAMETAG
+			],
+			Entity::DATA_NAMETAG => [
+					Entity::DATA_TYPE_STRING, $this->name
+			],
+			Entity::DATA_LEAD_HOLDER_EID => [
+						Entity::DATA_TYPE_LONG, -1
+			]
 		];
 		$target->dataPacket($pk);
 
