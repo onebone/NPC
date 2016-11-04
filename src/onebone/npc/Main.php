@@ -19,6 +19,7 @@
 
 namespace onebone\npc;
 
+use pocketmine\event\TranslationContainer;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -35,7 +36,7 @@ use pocketmine\Player;
 class Main extends PluginBase implements Listener{
 	/** @var NPC[] */
 	private $npc = [];
-	private $msgQueue;
+	private $msgQueue = [], $cmdQueue = [];
 
 	public function onEnable(){
 		if(!file_exists($this->getDataFolder())){
@@ -55,7 +56,7 @@ class Main extends PluginBase implements Listener{
 		foreach($data as $datam){
 			$skinFile = $this->getDataFolder()."skins/".$datam[6].".skin";
 			$datam[6] = file_get_contents($skinFile);
-			$npc = NPC::createNPC($datam);
+			$npc = NPC::createNPC($this, $datam);
 			$this->npc[$npc->getId()] = $npc;
 		}
 
@@ -64,16 +65,26 @@ class Main extends PluginBase implements Listener{
 
 	public function onPacketReceived(DataPacketReceiveEvent $event){
 		$pk = $event->getPacket();
-		if($pk instanceof InteractPacket){
+		if($pk instanceof InteractPacket and $pk->action === InteractPacket::ACTION_LEFT_CLICK){
 			if(isset($this->npc[$pk->target])){
+				$npc = $this->npc[$pk->target];
+
+				if(!isset($this->msgQueue[$event->getPlayer()->getName()]) and !isset($this->cmdQueue[$event->getPlayer()->getName()])){
+					$npc->onInteract($event->getPlayer());
+					return;
+				}
+
 				if(isset($this->msgQueue[$event->getPlayer()->getName()])){
-					$npc = $this->npc[$pk->target];
 					$npc->setMessage($this->msgQueue[$event->getPlayer()->getName()]);
 					unset($this->msgQueue[$event->getPlayer()->getName()]);
 					$event->getPlayer()->sendMessage("You have set NPC ".TextFormat::AQUA.$npc->getName().TextFormat::WHITE." to say ".TextFormat::GREEN.$npc->getMessage());
-					return;
-				}else{
-					$this->npc[$pk->target]->onInteract($event->getPlayer());
+				}
+
+				if(isset($this->cmdQueue[$event->getPlayer()->getName()])){
+					$npc->setCommand($this->cmdQueue[$event->getPlayer()->getName()]);
+					unset($this->cmdQueue[$event->getPlayer()->getName()]);
+
+					$event->getPlayer()->sendMessage("You have set NPC " . TextFormat::AQUA . $npc->getName() . TextFormat::WHITE . " to execute command " . TextFormat::GREEN . "/" . $npc->getCommand());
 				}
 			}
 		}
@@ -125,7 +136,7 @@ class Main extends PluginBase implements Listener{
 					}
 
 					if(!$sender->hasPermission("npc.command.npc.create")){
-						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 						return true;
 					}
 
@@ -136,7 +147,7 @@ class Main extends PluginBase implements Listener{
 					}
 					$location = new Location($sender->getX(), $sender->getY(), $sender->getZ(), -1, -1, $sender->getLevel());
 
-					$npc = new NPC(clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
+					$npc = new NPC($this, clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
 					$this->npc[$npc->getId()] = $npc;
 					foreach($sender->getLevel()->getPlayers() as $player){
 						$npc->spawnTo($player);
@@ -149,7 +160,7 @@ class Main extends PluginBase implements Listener{
 					case "remove":
 					case "r":
 					if(!$sender->hasPermission("npc.command.npc.remove")){
-						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 						return true;
 					}
 
@@ -176,7 +187,7 @@ class Main extends PluginBase implements Listener{
 				case "ls":
 				case "l":
 					if(!$sender->hasPermission("npc.command.npc.list")){
-						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 						return true;
 					}
 
@@ -207,7 +218,7 @@ class Main extends PluginBase implements Listener{
 				case "msg":
 				case "m":
 					if(!$sender->hasPermission("npc.command.npc.message")){
-						$sender->sendMessage(TextFormat::RED."You don't have permission to use this command.");
+						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
 						return true;
 					}
 
@@ -219,6 +230,16 @@ class Main extends PluginBase implements Listener{
 					if($this->getConfig()->get("save-on-change")){
 						$this->save();
 					}
+					return true;
+				case "command":
+				case "cmd":
+					if(!$sender->hasPermission("npc.command.npc.command")){
+						$sender->sendMessage(new TranslationContainer(TextFormat::RED . "%commands.generic.permission"));
+						return true;
+					}
+					
+					$this->cmdQueue[$sender->getName()] = trim(implode(" ", $params));
+					$sender->sendMessage("Touch NPC you want to set command.");
 					return true;
 			}
 		}

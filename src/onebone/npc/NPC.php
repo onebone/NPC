@@ -21,7 +21,6 @@ namespace onebone\npc;
 
 use pocketmine\entity\Entity;
 use pocketmine\level\Location;
-use pocketmine\Server;
 use pocketmine\network\protocol\AddPlayerPacket;
 use pocketmine\network\protocol\PlayerListPacket;
 use pocketmine\network\protocol\MovePlayerPacket;
@@ -33,14 +32,19 @@ use pocketmine\Player;
 use pocketmine\math\Vector2;
 
 class NPC extends Location{
+	/** @var  Main */
+	private $plugin;
 	private $eid;
 	private $skin, $skinId, $name;
-	private $item, $message;
+	private $item;
+	private $message, $command;
 
 	private $uuid;
 
-	public function __construct(Location $loc, $name, $skin, $skinId, Item $item, $message = ""){
+	public function __construct(Main $plugin, Location $loc, $name, $skin, $skinId, Item $item, $message = "", $command = null){
 		parent::__construct($loc->x, $loc->y, $loc->z, $loc->yaw, $loc->pitch, $loc->level);
+
+		$this->plugin = $plugin;
 
 		$this->eid = Entity::$entityCount++;
 		$this->skin = $skin;
@@ -48,6 +52,7 @@ class NPC extends Location{
 		$this->name = $name;
 		$this->item = $item;
 		$this->message = $message;
+		$this->command = $command;
 
 		$this->uuid = UUID::fromRandom();
 	}
@@ -62,6 +67,18 @@ class NPC extends Location{
 
 	public function getMessage(){
 		return $this->message;
+	}
+
+	public function setCommand($command){
+		if(trim($command) === ""){
+			$this->command = $command;
+		}
+
+		$this->command = $command;
+	}
+
+	public function getCommand(){
+		return $this->command;
 	}
 
 	public function getSkin(){
@@ -80,6 +97,10 @@ class NPC extends Location{
 	public function onInteract(Player $player){
 		if($this->message !== ""){
 			$player->sendMessage($this->message);
+		}
+
+		if($this->command !== null){
+			$this->plugin->getServer()->dispatchCommand($player, $this->command);
 		}
 	}
 
@@ -189,13 +210,21 @@ class NPC extends Location{
 		return [
 			$this->x, $this->y, $this->z, $this->level->getFolderName(),
 			$this->yaw, $this->pitch,
-			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinId, $this->message
+			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinId,
+			$this->message, $this->command
 		];
 	}
 
-	public static function createNPC($data){
-		Server::getInstance()->loadLevel($data[3]);
+	public static function createNPC(Main $plugin, $data){
+		$plugin->getServer()->loadLevel($data[3]);
 
-		return new NPC(new Location($data[0], $data[1], $data[2], $data[4], $data[5], Server::getInstance()->getLevelByName($data[3])), $data[9], $data[6], $data[10], Item::get($data[7], $data[8]), $data[11]);
+		return new NPC($plugin, new Location($data[0], $data[1], $data[2], $data[4], $data[5], $plugin->getServer()->getLevelByName($data[3])), // location
+			$data[9], // name
+			$data[6], // skin
+			$data[10], // skinId
+			Item::get($data[7], $data[8]), // item
+			$data[11], // message
+			$data[12] ?? null // command
+		);
 	}
 }
