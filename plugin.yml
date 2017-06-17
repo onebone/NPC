@@ -2,6 +2,7 @@ name: NPC
 author: onebone
 api:
 - 2.0.0
+- 3.0.0-ALPHA5
 main: onebone\npc\Main
 version: "1.4"
 
