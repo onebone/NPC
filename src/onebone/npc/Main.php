@@ -30,7 +30,7 @@ use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\network\protocol\InteractPacket;
+use pocketmine\network\mcpe\protocol\InteractPacket;
 use pocketmine\Player;
 
 class Main extends PluginBase implements Listener{

@@ -21,15 +21,15 @@ namespace onebone\npc;
 
 use pocketmine\entity\Entity;
 use pocketmine\level\Location;
-use pocketmine\network\protocol\AddPlayerPacket;
-use pocketmine\network\protocol\PlayerListPacket;
-use pocketmine\network\protocol\MovePlayerPacket;
-use pocketmine\network\protocol\RemoveEntityPacket;
 use pocketmine\utils\UUID;
 use pocketmine\utils\TextFormat;
 use pocketmine\item\Item;
 use pocketmine\Player;
 use pocketmine\math\Vector2;
+use pocketmine\network\mcpe\protocol\MovePlayerPacket;
+use pocketmine\network\mcpe\protocol\AddPlayerPacket;
+use pocketmine\network\mcpe\protocol\PlayerListPacket;
+use pocketmine\network\mcpe\protocol\RemoveEntityPacket;
 
 class NPC extends Location{
 	/** @var  Main */
@@ -106,7 +106,7 @@ class NPC extends Location{
 
 	public function seePlayer(Player $target){
 		$pk = new MovePlayerPacket();
-		$pk->eid = $this->eid;
+		$pk->entityRuntimeId = $this->eid;
 		if($this->yaw === -1 and $target !== null){
 			$xdiff = $target->x - $this->x;
 			$zdiff = $target->z - $this->z;
@@ -129,7 +129,7 @@ class NPC extends Location{
 		$pk->y = $this->y + 1.62;
 		$pk->z = $this->z;
 		$pk->bodyYaw = $pk->yaw;
-		$pk->onGruond = 0;
+		//$pk->onGruond = 0;
 
 		$target->dataPacket($pk);
 	}
@@ -138,7 +138,7 @@ class NPC extends Location{
 		$pk = new AddPlayerPacket();
 		$pk->uuid = $this->uuid;
 		$pk->username = $this->name;
-		$pk->eid = $this->eid;
+		$pk->entityRuntimeId = $this->eid;
 		$pk->x = $this->x;
 		$pk->y = $this->y;
 		$pk->z = $this->z;
@@ -185,8 +185,7 @@ class NPC extends Location{
 
 	public function removeFrom(Player $player){
 		$pk = new RemoveEntityPacket();
-		$pk->clientId = $this->uuid;
-		$pk->eid = $this->eid;
+		$pk->entityUniqueId = $this->eid;
 
 		$player->dataPacket($pk);
 
