@@ -125,7 +125,7 @@ class Main extends PluginBase implements Listener{
 		}
 	}
 
-	public function onCommand(CommandSender $sender, Command $command, $label, array $params){
+	public function onCommand(CommandSender $sender, Command $command, $label, array $params) : bool {
 		switch($command->getName()){
 			case "npc":
 			switch(strtolower(array_shift($params))){
