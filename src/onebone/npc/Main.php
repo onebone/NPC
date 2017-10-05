@@ -147,7 +147,7 @@ class Main extends PluginBase implements Listener{
 					}
 					$location = new Location($sender->getX(), $sender->getY(), $sender->getZ(), -1, -1, $sender->getLevel());
 
-					$npc = new NPC($this, clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
+					$npc = new NPC($this, clone $location, $name, $sender->getSkin()->getSkinData(), $sender->getSkin()->getSkinId(), $sender->getInventory()->getItemInHand());
 					$this->npc[$npc->getId()] = $npc;
 					foreach($sender->getLevel()->getPlayers() as $player){
 						$npc->spawnTo($player);

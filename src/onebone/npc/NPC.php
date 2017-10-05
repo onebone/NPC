@@ -125,9 +125,7 @@ class NPC extends Location{
 		}else{
 			$pk->pitch = $this->pitch;
 		}
-		$pk->x = $this->x;
-		$pk->y = $this->y + 1.62;
-		$pk->z = $this->z;
+		$pk->position = $this->asVector3()->add(0, 1.62, 0);
 		$pk->bodyYaw = $pk->yaw;
 		//$pk->onGruond = 0;
 
@@ -139,9 +137,7 @@ class NPC extends Location{
 		$pk->uuid = $this->uuid;
 		$pk->username = $this->name;
 		$pk->entityRuntimeId = $this->eid;
-		$pk->x = $this->x;
-		$pk->y = $this->y;
-		$pk->z = $this->z;
+		$pk->position = $this->asVector3();
 		if($this->yaw === -1 and $target !== null){
 			$xdiff = $target->x - $this->x;
 			$zdiff = $target->z - $this->z;
