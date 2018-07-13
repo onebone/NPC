@@ -24,7 +24,6 @@ use pocketmine\network\mcpe\protocol\InventoryTransactionPacket;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
-use pocketmine\level\Location;
 use pocketmine\utils\TextFormat;
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
