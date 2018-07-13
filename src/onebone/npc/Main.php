@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2015-2016 onebone <jyc00410@gmail.com>
+ * Copyright (C) 2015-2018 onebone <jyc00410@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,8 @@
 
 namespace onebone\npc;
 
-use pocketmine\event\TranslationContainer;
+use pocketmine\lang\TranslationContainer;
+use pocketmine\network\mcpe\protocol\InventoryTransactionPacket;
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -30,7 +31,6 @@ use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\entity\EntityTeleportEvent;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\network\mcpe\protocol\InteractPacket;
 use pocketmine\Player;
 
 class Main extends PluginBase implements Listener{
@@ -65,9 +65,9 @@ class Main extends PluginBase implements Listener{
 
 	public function onPacketReceived(DataPacketReceiveEvent $event){
 		$pk = $event->getPacket();
-		if($pk instanceof InteractPacket and $pk->action === InteractPacket::ACTION_LEFT_CLICK){
-			if(isset($this->npc[$pk->target])){
-				$npc = $this->npc[$pk->target];
+		if($pk instanceof InventoryTransactionPacket and $pk->transactionType === InventoryTransactionPacket::TYPE_USE_ITEM_ON_ENTITY){
+			if(isset($this->npc[$pk->trData->entityRuntimeId])){
+				$npc = $this->npc[$pk->trData->entityRuntimeId];
 
 				if(!isset($this->msgQueue[$event->getPlayer()->getName()]) and !isset($this->cmdQueue[$event->getPlayer()->getName()])){
 					$npc->onInteract($event->getPlayer());
@@ -145,9 +145,8 @@ class Main extends PluginBase implements Listener{
 						$sender->sendMessage(TextFormat::RED."Usage: /npc create <name>");
 						return true;
 					}
-					$location = new Location($sender->getX(), $sender->getY(), $sender->getZ(), -1, -1, $sender->getLevel());
 
-					$npc = new NPC($this, clone $location, $name, $sender->getSkinData(), $sender->getSkinId(), $sender->getInventory()->getItemInHand());
+					$npc = new NPC($this, $sender->asLocation(), $name, $sender->getSkin(), $sender->getInventory()->getItemInHand());
 					$this->npc[$npc->getId()] = $npc;
 					foreach($sender->getLevel()->getPlayers() as $player){
 						$npc->spawnTo($player);

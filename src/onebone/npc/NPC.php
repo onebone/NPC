@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2015-2016 onebone <jyc00410@gmail.com>
+ * Copyright (C) 2015-2018 onebone <jyc00410@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +20,14 @@
 namespace onebone\npc;
 
 use pocketmine\entity\Entity;
+use pocketmine\entity\Skin;
 use pocketmine\level\Location;
+use pocketmine\math\Vector2;
+use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
 use pocketmine\utils\UUID;
 use pocketmine\utils\TextFormat;
 use pocketmine\item\Item;
 use pocketmine\Player;
-use pocketmine\math\Vector2;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\AddPlayerPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
@@ -35,20 +37,21 @@ class NPC extends Location{
 	/** @var  Main */
 	private $plugin;
 	private $eid;
-	private $skin, $skinId, $name;
+	/** @var Skin */
+	private $skin;
+	private $name;
 	private $item;
 	private $message, $command;
 
 	private $uuid;
 
-	public function __construct(Main $plugin, Location $loc, $name, $skin, $skinId, Item $item, $message = "", $command = null){
+	public function __construct(Main $plugin, Location $loc, $name, Skin $skin, Item $item, $message = "", $command = null){
 		parent::__construct($loc->x, $loc->y, $loc->z, $loc->yaw, $loc->pitch, $loc->level);
 
 		$this->plugin = $plugin;
 
 		$this->eid = Entity::$entityCount++;
 		$this->skin = $skin;
-		$this->skinId = $skinId;
 		$this->name = $name;
 		$this->item = $item;
 		$this->message = $message;
@@ -86,8 +89,7 @@ class NPC extends Location{
 	}
 
 	public function setHoldingItem(Item $item){
-		$this->item = $item->getId();
-		$this->meta = $item->getDamage();
+		$this->item = clone $item;
 	}
 
 	public function getId(){
@@ -125,11 +127,8 @@ class NPC extends Location{
 		}else{
 			$pk->pitch = $this->pitch;
 		}
-		$pk->x = $this->x;
-		$pk->y = $this->y + 1.62;
-		$pk->z = $this->z;
-		$pk->bodyYaw = $pk->yaw;
-		//$pk->onGruond = 0;
+		$pk->position = $this->asLocation()->add(0, 1.62, 0);
+		$pk->headYaw = $pk->yaw;
 
 		$target->dataPacket($pk);
 	}
@@ -139,9 +138,7 @@ class NPC extends Location{
 		$pk->uuid = $this->uuid;
 		$pk->username = $this->name;
 		$pk->entityRuntimeId = $this->eid;
-		$pk->x = $this->x;
-		$pk->y = $this->y;
-		$pk->z = $this->z;
+		$pk->position = $this->asVector3();
 		if($this->yaw === -1 and $target !== null){
 			$xdiff = $target->x - $this->x;
 			$zdiff = $target->z - $this->z;
@@ -174,10 +171,11 @@ class NPC extends Location{
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_ADD;
 
+		$name = TextFormat::GRAY."NPC: ".$this->name;
 		$pk->entries = [
-			[
-				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinId, $this->skin
-			]
+			PlayerListEntry::createAdditionEntry(
+				$this->uuid, $this->eid, $name, $name, 0, $this->skin
+			)
 		];
 
 		$target->dataPacket($pk);
@@ -191,10 +189,12 @@ class NPC extends Location{
 
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_REMOVE;
+
+		$name = TextFormat::GRAY."NPC: ".$this->name;
 		$pk->entries = [
-			[
-				$this->uuid, $this->eid, TextFormat::GRAY."NPC: ".$this->name, $this->skinId, $this->skin
-			]
+			PlayerListEntry::createAdditionEntry(
+				$this->uuid, $this->eid, $name, $name, 0, $this->skin
+			)
 		];
 		$player->dataPacket($pk);
 	}
@@ -209,7 +209,7 @@ class NPC extends Location{
 		return [
 			$this->x, $this->y, $this->z, $this->level->getFolderName(),
 			$this->yaw, $this->pitch,
-			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skinId,
+			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skin->getSkinId(),
 			$this->message, $this->command
 		];
 	}
@@ -219,8 +219,7 @@ class NPC extends Location{
 
 		return new NPC($plugin, new Location($data[0], $data[1], $data[2], $data[4], $data[5], $plugin->getServer()->getLevelByName($data[3])), // location
 			$data[9], // name
-			$data[6], // skin
-			$data[10], // skinId
+			new Skin($data[10], $data[6]),
 			Item::get($data[7], $data[8]), // item
 			$data[11], // message
 			$data[12] ?? null // command
