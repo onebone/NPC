@@ -209,7 +209,7 @@ class NPC extends Location{
 		return [
 			$this->x, $this->y, $this->z, $this->level->getFolderName(),
 			$this->yaw, $this->pitch,
-			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skin->getSkinId(),
+			$this->eid, $this->item->getId(), $this->item->getDamage(), $this->name, $this->skin->getSkinId(), $this->skin->getSkinData(),
 			$this->message, $this->command
 		];
 	}
@@ -219,10 +219,10 @@ class NPC extends Location{
 
 		return new NPC($plugin, new Location($data[0], $data[1], $data[2], $data[4], $data[5], $plugin->getServer()->getLevelByName($data[3])), // location
 			$data[9], // name
-			new Skin($data[10], $data[6]),
+			new Skin($data[10], $data[11]),
 			Item::get($data[7], $data[8]), // item
-			$data[11], // message
-			$data[12] ?? null // command
+			$data[12], // message
+			$data[13] ?? null // command
 		);
 	}
 }

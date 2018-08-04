@@ -259,7 +259,7 @@ class Main extends PluginBase implements Listener{
 		$save = [];
 		foreach($this->npc as $npc){
 			$data = $npc->getSaveData();
-			file_put_contents($this->getDataFolder()."skins/".$data[6].".skin", $npc->getSkin());
+			file_put_contents($this->getDataFolder()."skins/".$data[6].".skin", $npc->getSkin()->getSkinData());
 			$save[] = $data;
 		}
 		file_put_contents($this->getDataFolder()."npc.dat", serialize($save));
