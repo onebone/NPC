@@ -130,7 +130,7 @@ class NPC extends Location{
 		$pk->position = $this->asLocation()->add(0, 1.62, 0);
 		$pk->headYaw = $pk->yaw;
 
-		$target->dataPacket($pk);
+		$target->sendDataPacket($pk);
 	}
 
 	public function spawnTo(Player $target){
@@ -166,7 +166,7 @@ class NPC extends Location{
 						Entity::DATA_TYPE_LONG, -1
 			]
 		];
-		$target->dataPacket($pk);
+		$target->sendDataPacket($pk);
 
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_ADD;
@@ -174,18 +174,18 @@ class NPC extends Location{
 		$name = TextFormat::GRAY."NPC: ".$this->name;
 		$pk->entries = [
 			PlayerListEntry::createAdditionEntry(
-				$this->uuid, $this->eid, $name, $name, 0, $this->skin
+				$this->uuid, $this->eid, $name, $this->skin
 			)
 		];
 
-		$target->dataPacket($pk);
+		$target->sendDataPacket($pk);
 	}
 
 	public function removeFrom(Player $player){
 		$pk = new RemoveEntityPacket();
 		$pk->entityUniqueId = $this->eid;
 
-		$player->dataPacket($pk);
+		$player->sendDataPacket($pk);
 
 		$pk = new PlayerListPacket();
 		$pk->type = PlayerListPacket::TYPE_REMOVE;
@@ -193,10 +193,10 @@ class NPC extends Location{
 		$name = TextFormat::GRAY."NPC: ".$this->name;
 		$pk->entries = [
 			PlayerListEntry::createAdditionEntry(
-				$this->uuid, $this->eid, $name, $name, 0, $this->skin
+				$this->uuid, $this->eid, $name, $this->skin
 			)
 		];
-		$player->dataPacket($pk);
+		$player->sendDataPacket($pk);
 	}
 
 	public function remove(){
